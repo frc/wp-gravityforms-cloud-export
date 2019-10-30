@@ -4,8 +4,12 @@ namespace Frc\GformsCloudExport\Admin;
 
 use GFForms;
 use function add_submenu_page;
+use function array_keys;
+use function array_merge;
 use function current_user_can;
+use function get_site_option;
 use function in_array;
+use function is_multisite;
 use function remove_action;
 use function remove_filter;
 use function remove_submenu_page;
@@ -13,10 +17,12 @@ use function remove_submenu_page;
 class Admin {
 
     protected $CloudExportClass = '\\Frc\\GformsCloudExport\\Export\\CloudExport';
+    protected $activePlugins = [];
 
     public function load() {
+        $this->setActivePlugins();
 
-        if (!static::gFormsActive()){
+        if (!$this->gFormsActive()){
             return;
         }
 
@@ -25,7 +31,7 @@ class Admin {
         // because load balancer routes the ajax calls to a random server and creates a temp file.
         // Second call might be to a different server so the file would not be there.
         // or when using gcloud storage https://cloud.google.com/storage/docs/key-terms#immutability (gcs plugin)
-        if (static::s3Active() || static::gcsActive()) {
+        if ($this->s3Active() || $this->gcsActive()) {
             static::removeGFExport();
         } else {
             return;
@@ -38,6 +44,16 @@ class Admin {
             $this,
             'exportPage'
         ]);
+    }
+
+    public function setActivePlugins() {
+        $this->activePlugins = apply_filters('active_plugins', get_option('active_plugins'));
+        if (is_multisite()) {
+            $multisitePlugins    = get_site_option('active_sitewide_plugins');
+            $multisitePlugins    = array_keys($multisitePlugins);
+            $this->activePlugins = array_merge($this->activePlugins, $multisitePlugins);
+        }
+        return $this->activePlugins;
     }
 
     public function exportPage() {
@@ -59,19 +75,16 @@ class Admin {
         remove_action('formular_page_gf_export', ['GFForms', 'export_page']);
     }
 
-    public static function gFormsActive() {
-        $plugins = apply_filters('active_plugins', get_option('active_plugins'));
-        return in_array('gravityforms/gravityforms.php', $plugins);
+    public function gFormsActive() {
+        return in_array('gravityforms/gravityforms.php', $this->activePlugins);
     }
 
-    public static function s3Active() {
-        $plugins = apply_filters('active_plugins', get_option('active_plugins'));
-        return (in_array('wp-amazon-s3-and-cloudfront/wordpress-s3.php', $plugins) || in_array('amazon-s3-and-cloudfront/wordpress-s3.php', $plugins));
+    public function s3Active() {
+        return (in_array('wp-amazon-s3-and-cloudfront/wordpress-s3.php', $this->activePlugins) || in_array('amazon-s3-and-cloudfront/wordpress-s3.php', $this->activePlugins));
     }
 
-    public static function gcsActive() {
-        $plugins = apply_filters('active_plugins', get_option('active_plugins'));
-        return in_array('gcs/gcs.php', $plugins);
+    public function gcsActive() {
+        return in_array('gcs/gcs.php', $this->activePlugins);
     }
 
 }
