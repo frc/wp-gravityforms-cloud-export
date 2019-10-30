@@ -1,0 +1,23 @@
+{
+    "name": "frc/wp-gravityforms-cloud-export",
+    "type": "wordpress-plugin",
+    "description": "Change the behavior of Gravity Forms Export. Use when running on heroku or gae.",
+    "homepage": "https://www.frantic.com/",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Janne Aalto",
+            "email": "janne.aalto@frantic.com"
+        }
+    ],
+    "keywords": [
+        "wordpress"
+    ],
+    "require": {
+        "php": ">=7"
+    },
+    "require-dev": {
+    },
+    "scripts": {
+    }
+}
